@@ -1,0 +1,4 @@
+# Activate python virtual environment
+1. cd .venv/Scripts/
+2. /activate.bat
+
