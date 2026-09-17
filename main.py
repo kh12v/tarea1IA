@@ -20,10 +20,10 @@ def setMap():
 
 def setIterations():
     iterations = -1
-    while iterations < 80 or iterations > 200:
+    while iterations < 1 or iterations > 200:
         try:
-            iterations = int(input("Ingrese la cantidad de iteraciones [80, 200]: "))
-            if (iterations < 80 or iterations > 200):
+            iterations = int(input("Ingrese la cantidad de iteraciones [1, 200] ideal 80 mínimo: "))
+            if (iterations < 1 or iterations > 200):
                 print("Ingrese un valor válido")
         except ValueError:
             print("Error: El valor ingresado debe ser un numero")
@@ -62,30 +62,48 @@ def spreadFire(mapToUse: np.ndarray, stats: dict):
     return mapWithFire
 
 def main():
-    mapToUse = setMap()
+    original_map = setMap()
     iterations = setIterations()
     algo = setAlgo()
-    print("Mapa seleccionado: ", mapToUse)
+    print("Mapa seleccionado:\n", original_map)
     print("Iteraciones: ", iterations)
     print("Algoritmo: ", algo)
 
-    print("\nMapa inicial:")
-    print(mapToUse)
-
-    stats = {"escaped": 0, "died": 0}
+    all_stats = []
 
     print("\nResultados:")
     for i in range(iterations):
-        if (i % NUM_FIRE_TURNS == 0):
-            mapToUse = spreadFire(mapToUse, stats)
-        mapToUse = algoIteration(algo, mapToUse, stats)
-        print("Iteracion: ", i + 1)
-        print(mapToUse)
-        print(f"Escaparon: {stats['escaped']} | Murieron: {stats['died']}")
+        mapToUse = np.copy(original_map)
+        stats = {"escaped": 0, "died": 0}
+        turn = 0
         
+        print(f"\n--- Iniciando Simulación (Iteración {i + 1}) ---")
+        
+        while True:
+            # Verificar si quedan personas en el mapa
+            people_left = np.any(np.isin(mapToUse, ['1', '2', '3']))
+            if not people_left:
+                break
+                
+            if (turn % NUM_FIRE_TURNS == 0 and turn > 0):
+                mapToUse = spreadFire(mapToUse, stats)
+            mapToUse = algoIteration(algo, mapToUse, stats)
+            
+            print(f"Turno: {turn + 1}")
+            print(mapToUse)
+            turn += 1
+            input("Presione enter para ver el siguiente turno")
+            
+        print(f"Fin de la iteración {i + 1}. Escaparon: {stats['escaped']} | Murieron: {stats['died']}")
+        all_stats.append(stats)
+        
+    total_escaped = sum(s["escaped"] for s in all_stats)
+    total_died = sum(s["died"] for s in all_stats)
+    
     print("\n--- Estadísticas Finales ---")
-    print(f"Total personas que escaparon: {stats['escaped']}")
-    print(f"Total personas que murieron: {stats['died']}")
+    print(f"Total de iteraciones jugadas: {iterations}")
+    print(f"Total personas que escaparon: {total_escaped}")
+    print(f"Total personas que murieron: {total_died}")
 
 if __name__ == "__main__":
     main()
