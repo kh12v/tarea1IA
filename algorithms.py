@@ -262,7 +262,95 @@ def a_star(mapToUse: np.ndarray, stats: dict):
     return new_map
 
 def greedy_best_first_search(mapToUse: np.ndarray, stats: dict):
-    return mapToUse
+    rows, cols = mapToUse.shape
+    people = []
+    exit_pos = None
+    
+    # Find all people and the exit
+    for r in range(rows):
+        for c in range(cols):
+            val = mapToUse[r, c]
+            if val == 'E':
+                exit_pos = (r, c)
+            elif val in ['1', '2', '3']:
+                for _ in range(int(val)):
+                    people.append((r, c))
+                    
+    if not exit_pos or not people:
+        return mapToUse
+
+    new_map = np.copy(mapToUse)
+    
+    for pr, pc in people:
+        val = new_map[pr, pc]
+        if val in ['1', '2', '3']:
+            new_val = str(int(val) - 1)
+            new_map[pr, pc] = new_val if new_val != '0' else ' '
+        else:
+            continue
+            
+        # Manhattan distance heuristic
+        def h(r, c):
+            return abs(r - exit_pos[0]) + abs(c - exit_pos[1])
+            
+        # Priority queue sorted strictly by heuristic (Greedy approach)
+        # We include 'g' (which factors in cell weight) as the tie-breaker!
+        pq = [(h(pr, pc), 0, pr, pc)]
+        distances = { (pr, pc): 0 }
+        came_from = {}
+        
+        found = False
+        while pq:
+            # f here is strictly the heuristic value
+            f, g, r, c = heapq.heappop(pq)
+            
+            if (r, c) == exit_pos:
+                found = True
+                break
+                
+            if g > distances.get((r, c), np.inf):
+                continue
+                
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols:
+                    if mapToUse[nr, nc] not in ['#', '*'] or (nr, nc) == exit_pos:
+                        cost_to_enter = get_cell_cost(mapToUse[nr, nc]) if (nr, nc) != exit_pos else 1
+                        new_g = g + cost_to_enter
+                        
+                        if new_g < distances.get((nr, nc), np.inf):
+                            distances[(nr, nc)] = new_g
+                            came_from[(nr, nc)] = (r, c)
+                            # Pushing h(nr, nc) as the primary key instead of new_g + h(nr, nc)
+                            heapq.heappush(pq, (h(nr, nc), new_g, nr, nc))
+                            
+        best_pos = (pr, pc)
+        if found:
+            # Reconstruct the path to find the first step
+            curr = exit_pos
+            path = []
+            while curr != (pr, pc):
+                path.append(curr)
+                curr = came_from.get(curr)
+            if path:
+                next_step = path[-1] # the first step to take from (pr, pc)
+                target_val = new_map[next_step[0], next_step[1]]
+                
+                # Check capacity constraint dynamically
+                if target_val == 'E' or target_val == ' ' or (target_val in ['1', '2', '3'] and int(target_val) < MAX_PEOPLE_PER_CELL):
+                    best_pos = next_step
+
+        # Move the person
+        if best_pos == exit_pos:
+            stats["escaped"] += 1
+        else:
+            target_val = new_map[best_pos[0], best_pos[1]]
+            if target_val == ' ':
+                new_map[best_pos[0], best_pos[1]] = '1'
+            elif target_val in ['1', '2', '3']:
+                new_map[best_pos[0], best_pos[1]] = str(int(target_val) + 1)
+                
+    return new_map
 
 def genetic_algorithm(mapToUse: np.ndarray, stats: dict):
     return mapToUse
