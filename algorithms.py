@@ -1,5 +1,6 @@
 import numpy as np
 import heapq
+import random
 from collections import deque
 from config import *
 
@@ -353,7 +354,138 @@ def greedy_best_first_search(mapToUse: np.ndarray, stats: dict):
     return new_map
 
 def genetic_algorithm(mapToUse: np.ndarray, stats: dict):
-    return mapToUse
+    rows, cols = mapToUse.shape
+    people = []
+    exit_pos = None
+    
+    # Find all people and the exit
+    for r in range(rows):
+        for c in range(cols):
+            val = mapToUse[r, c]
+            if val == 'E':
+                exit_pos = (r, c)
+            elif val in ['1', '2', '3']:
+                for _ in range(int(val)):
+                    people.append((r, c))
+                    
+    if not exit_pos or not people:
+        return mapToUse
+
+    new_map = np.copy(mapToUse)
+    
+    POP_SIZE = 20
+    GENERATIONS = 10
+    SEQ_LENGTH = 15
+    MUTATION_RATE = 0.1
+    MOVES = [(-1, 0), (1, 0), (0, -1), (0, 1), (0, 0)] # Up, Down, Left, Right, Stay
+    
+    for pr, pc in people:
+        val = new_map[pr, pc]
+        if val in ['1', '2', '3']:
+            new_val = str(int(val) - 1)
+            new_map[pr, pc] = new_val if new_val != '0' else ' '
+        else:
+            continue
+            
+        # GA Initialization
+        population = []
+        for _ in range(POP_SIZE):
+            chromosome = [random.choice(MOVES) for _ in range(SEQ_LENGTH)]
+            population.append(chromosome)
+            
+        def evaluate_fitness(chromosome):
+            curr_r, curr_c = pr, pc
+            score = 0
+            
+            for move in chromosome:
+                nr, nc = curr_r + move[0], curr_c + move[1]
+                
+                # Check bounds
+                if not (0 <= nr < rows and 0 <= nc < cols):
+                    score -= 100 # Penalty for walking off grid
+                    continue # Ignore move (don't update position)
+                    
+                target_val = mapToUse[nr, nc] # Use static map for evaluation
+                
+                if target_val in ['#', '*']:
+                    score -= 50 # Penalty for hitting wall or fire
+                    continue # Ignore move
+                    
+                # Move is valid, update position
+                curr_r, curr_c = nr, nc
+                
+                if (curr_r, curr_c) == exit_pos:
+                    score += 1000 # Huge bonus for reaching exit
+                    break # Stop evaluating, we reached the exit!
+                    
+                # Apply cell weight penalty
+                # We want to MAXIMIZE fitness, so subtract cost
+                score -= get_cell_cost(target_val)
+                
+            # Add final Manhattan distance to fitness (negative to minimize distance)
+            dist_to_exit = abs(curr_r - exit_pos[0]) + abs(curr_c - exit_pos[1])
+            score -= dist_to_exit * 10 
+            
+            return score
+            
+        for _ in range(GENERATIONS):
+            # Evaluate fitness
+            fitness_scores = [(evaluate_fitness(chrom), chrom) for chrom in population]
+            # Sort descending (higher fitness is better)
+            fitness_scores.sort(key=lambda x: x[0], reverse=True)
+            
+            # Elitism: keep best 2
+            next_generation = [fitness_scores[0][1], fitness_scores[1][1]]
+            
+            def select_parent():
+                # Tournament selection (size 3)
+                tournament = random.sample(fitness_scores, 3)
+                tournament.sort(key=lambda x: x[0], reverse=True)
+                return tournament[0][1]
+                
+            while len(next_generation) < POP_SIZE:
+                p1 = select_parent()
+                p2 = select_parent()
+                
+                # Single point crossover
+                split = random.randint(1, SEQ_LENGTH - 1)
+                child = p1[:split] + p2[split:]
+                
+                # Mutation
+                for i in range(SEQ_LENGTH):
+                    if random.random() < MUTATION_RATE:
+                        child[i] = random.choice(MOVES)
+                        
+                next_generation.append(child)
+                
+            population = next_generation
+            
+        # Final Evaluation to get the best chromosome
+        best_chromosome = max(population, key=evaluate_fitness)
+        
+        # Determine best_pos from the first move of the best chromosome
+        best_pos = (pr, pc)
+        first_move = best_chromosome[0]
+        nr, nc = pr + first_move[0], pc + first_move[1]
+        
+        # Dynamically check capacity constraints for the chosen move
+        if 0 <= nr < rows and 0 <= nc < cols:
+            target_val = new_map[nr, nc]
+            if target_val not in ['#', '*']:
+                if target_val == 'E' or target_val == ' ' or (target_val in ['1', '2', '3'] and int(target_val) < MAX_PEOPLE_PER_CELL):
+                    best_pos = (nr, nc)
+                    
+        # Move the person
+        if best_pos == exit_pos:
+            stats["escaped"] += 1
+        else:
+            target_val = new_map[best_pos[0], best_pos[1]]
+            if target_val == ' ':
+                new_map[best_pos[0], best_pos[1]] = '1'
+            elif target_val in ['1', '2', '3']:
+                new_map[best_pos[0], best_pos[1]] = str(int(target_val) + 1)
+                
+    return new_map
 
 def algoIteration(algo: int, mapToUse: np.ndarray, stats: dict):
     if algo == DIJKSTRA:
