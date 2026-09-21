@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from config import NUM_FIRE_TURNS
 from algorithms import algoIteration
@@ -16,7 +17,7 @@ def setMap():
                 print("Ingrese una opción válida")
         except ValueError:
             print("Error: El valor ingresado debe ser un numero")
-    return maps[mapToUse-1]
+    return mapToUse, maps[mapToUse-1]
 
 def setIterations():
     iterations = -1
@@ -62,7 +63,7 @@ def spreadFire(mapToUse: np.ndarray, stats: dict):
     return mapWithFire
 
 def main():
-    original_map = setMap()
+    map_index, original_map = setMap()
     iterations = setIterations()
     algo = setAlgo()
     print("Mapa seleccionado:\n", original_map)
@@ -89,21 +90,67 @@ def main():
                 mapToUse = spreadFire(mapToUse, stats)
             mapToUse = algoIteration(algo, mapToUse, stats)
             
-            print(f"Turno: {turn + 1}")
-            print(mapToUse)
+            # print(f"Turno: {turn + 1}")
+            # print(mapToUse)
             turn += 1
-            input("Presione enter para ver el siguiente turno")
+            # input("Presione enter para ver el siguiente turno")
             
-        print(f"Fin de la iteración {i + 1}. Escaparon: {stats['escaped']} | Murieron: {stats['died']}")
+        stats["turns"] = turn
+        print(f"Fin de la iteración {i + 1}. Escaparon: {stats['escaped']} | Murieron: {stats['died']} | Turnos: {turn}")
         all_stats.append(stats)
         
     total_escaped = sum(s["escaped"] for s in all_stats)
     total_died = sum(s["died"] for s in all_stats)
     
-    print("\n--- Estadísticas Finales ---")
+    # Cada iteración tiene exactamente 3 personas al inicio (config.py)
+    total_initial = 3 * iterations
+    survival_rate = (total_escaped / total_initial) * 100
+    
+    # Distribución del tiempo de los turnos
+    turns_list = [s["turns"] for s in all_stats]
+    mean_turns = np.mean(turns_list)
+    std_turns = np.std(turns_list)
+    min_turns = np.min(turns_list)
+    max_turns = np.max(turns_list)
+    
+    print("\n--- Estadísticas Finales (Relevancia Estadística) ---")
     print(f"Total de iteraciones jugadas: {iterations}")
-    print(f"Total personas que escaparon: {total_escaped}")
-    print(f"Total personas que murieron: {total_died}")
+    print(f"Total personas que escaparon: {total_escaped} / {total_initial}")
+    print(f"Total personas que murieron: {total_died} / {total_initial}")
+    print(f"Tasa de supervivencia: {survival_rate:.2f}%")
+    
+    print("\n--- Distribución del Tiempo de Despeje (Turnos) ---")
+    print(f"Media de turnos (Mean): {mean_turns:.2f}")
+    print(f"Desviación estándar (Std Dev): {std_turns:.2f}")
+    print(f"Mínimo de turnos (Min): {min_turns}")
+    print(f"Máximo de turnos (Max): {max_turns}")
+    
+    # Save statistics to file
+    map_names = {1: "highDensity", 2: "mediumDensity", 3: "lowDensity"}
+    algo_names = {1: "dijkstra", 2: "bfs", 3: "a_star", 4: "greedy", 5: "genetic"}
+    
+    algo_name = algo_names.get(algo, "unknown_algo")
+    map_name = map_names.get(map_index, "unknown_map")
+    
+    dir_path = os.path.join("data", algo_name)
+    os.makedirs(dir_path, exist_ok=True)
+    file_path = os.path.join(dir_path, f"{map_name}.txt")
+    
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write("--- Estadísticas Finales (Relevancia Estadística) ---\n")
+            f.write(f"Total de iteraciones jugadas: {iterations}\n")
+            f.write(f"Total personas que escaparon: {total_escaped} / {total_initial}\n")
+            f.write(f"Total personas que murieron: {total_died} / {total_initial}\n")
+            f.write(f"Tasa de supervivencia: {survival_rate:.2f}%\n\n")
+            f.write("--- Distribución del Tiempo de Despeje (Turnos) ---\n")
+            f.write(f"Media de turnos (Mean): {mean_turns:.2f}\n")
+            f.write(f"Desviación estándar (Std Dev): {std_turns:.2f}\n")
+            f.write(f"Mínimo de turnos (Min): {min_turns}\n")
+            f.write(f"Máximo de turnos (Max): {max_turns}\n")
+        print(f"\nEstadísticas guardadas exitosamente en: {file_path}")
+    except Exception as e:
+        print(f"\nError al guardar las estadisticas: {e}")
 
 if __name__ == "__main__":
     main()

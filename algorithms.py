@@ -4,6 +4,8 @@ import random
 from collections import deque
 from config import *
 
+# TODO: Hacer informe también
+
 def get_cell_cost(val):
     if val in ['1', '2', '3']:
         return 1 + int(val)
