@@ -4,10 +4,8 @@ import random
 from collections import deque
 from config import *
 
-# TODO: Hacer informe también
-
 def get_cell_cost(val):
-    if val in ['1', '2', '3']:
+    if val.isdigit():
         return 1 + int(val)
     return 1
 
@@ -22,7 +20,7 @@ def dijkstra(mapToUse: np.ndarray, stats: dict):
             val = mapToUse[r, c]
             if val == 'E':
                 exit_pos = (r, c)
-            elif val in ['1', '2', '3']:
+            elif val.isdigit():
                 # store the position multiple times if there are multiple people
                 for _ in range(int(val)):
                     people.append((r, c))
@@ -58,7 +56,7 @@ def dijkstra(mapToUse: np.ndarray, stats: dict):
     for pr, pc in people:
         # Check if the person is still at (pr, pc) in new_map
         val = new_map[pr, pc]
-        if val in ['1', '2', '3']:
+        if val.isdigit():
             new_val = str(int(val) - 1)
             new_map[pr, pc] = new_val if new_val != '0' else ' '
         else:
@@ -74,7 +72,7 @@ def dijkstra(mapToUse: np.ndarray, stats: dict):
                 target_val = new_map[nr, nc]
                 if target_val not in ['#', '*']:
                     # Check capacity constraint
-                    if target_val == 'E' or target_val == ' ' or (target_val in ['1', '2', '3'] and int(target_val) < MAX_PEOPLE_PER_CELL):
+                    if target_val == 'E' or target_val == ' ' or (target_val.isdigit() and int(target_val) < MAX_PEOPLE_PER_CELL):
                         if distances[nr, nc] < best_dist:
                             best_dist = distances[nr, nc]
                             best_pos = (nr, nc)
@@ -87,7 +85,7 @@ def dijkstra(mapToUse: np.ndarray, stats: dict):
             target_val = new_map[best_pos[0], best_pos[1]]
             if target_val == ' ':
                 new_map[best_pos[0], best_pos[1]] = '1'
-            elif target_val in ['1', '2', '3']:
+            elif target_val.isdigit():
                 new_map[best_pos[0], best_pos[1]] = str(int(target_val) + 1)
                 
     return new_map
@@ -103,7 +101,7 @@ def bfs(mapToUse: np.ndarray, stats: dict):
             val = mapToUse[r, c]
             if val == 'E':
                 exit_pos = (r, c)
-            elif val in ['1', '2', '3']:
+            elif val.isdigit():
                 # store the position multiple times if there are multiple people
                 for _ in range(int(val)):
                     people.append((r, c))
@@ -143,7 +141,7 @@ def bfs(mapToUse: np.ndarray, stats: dict):
     for pr, pc in people:
         # Check if the person is still at (pr, pc) in new_map
         val = new_map[pr, pc]
-        if val in ['1', '2', '3']:
+        if val.isdigit():
             new_val = str(int(val) - 1)
             new_map[pr, pc] = new_val if new_val != '0' else ' '
         else:
@@ -159,7 +157,7 @@ def bfs(mapToUse: np.ndarray, stats: dict):
                 target_val = new_map[nr, nc]
                 if target_val not in ['#', '*']:
                     # Check capacity constraint
-                    if target_val == 'E' or target_val == ' ' or (target_val in ['1', '2', '3'] and int(target_val) < MAX_PEOPLE_PER_CELL):
+                    if target_val == 'E' or target_val == ' ' or (target_val.isdigit() and int(target_val) < MAX_PEOPLE_PER_CELL):
                         n_dist = distances.get((nr, nc), (np.inf, np.inf))
                         if n_dist < best_dist:
                             best_dist = n_dist
@@ -173,7 +171,7 @@ def bfs(mapToUse: np.ndarray, stats: dict):
             target_val = new_map[best_pos[0], best_pos[1]]
             if target_val == ' ':
                 new_map[best_pos[0], best_pos[1]] = '1'
-            elif target_val in ['1', '2', '3']:
+            elif target_val.isdigit():
                 new_map[best_pos[0], best_pos[1]] = str(int(target_val) + 1)
                 
     return new_map
@@ -189,7 +187,7 @@ def a_star(mapToUse: np.ndarray, stats: dict):
             val = mapToUse[r, c]
             if val == 'E':
                 exit_pos = (r, c)
-            elif val in ['1', '2', '3']:
+            elif val.isdigit():
                 for _ in range(int(val)):
                     people.append((r, c))
                     
@@ -200,7 +198,7 @@ def a_star(mapToUse: np.ndarray, stats: dict):
     
     for pr, pc in people:
         val = new_map[pr, pc]
-        if val in ['1', '2', '3']:
+        if val.isdigit():
             new_val = str(int(val) - 1)
             new_map[pr, pc] = new_val if new_val != '0' else ' '
         else:
@@ -249,7 +247,7 @@ def a_star(mapToUse: np.ndarray, stats: dict):
                 target_val = new_map[next_step[0], next_step[1]]
                 
                 # Check capacity constraint
-                if target_val == 'E' or target_val == ' ' or (target_val in ['1', '2', '3'] and int(target_val) < MAX_PEOPLE_PER_CELL):
+                if target_val == 'E' or target_val == ' ' or (target_val.isdigit() and int(target_val) < MAX_PEOPLE_PER_CELL):
                     best_pos = next_step
 
         # Move the person
@@ -259,7 +257,7 @@ def a_star(mapToUse: np.ndarray, stats: dict):
             target_val = new_map[best_pos[0], best_pos[1]]
             if target_val == ' ':
                 new_map[best_pos[0], best_pos[1]] = '1'
-            elif target_val in ['1', '2', '3']:
+            elif target_val.isdigit():
                 new_map[best_pos[0], best_pos[1]] = str(int(target_val) + 1)
                 
     return new_map
@@ -275,7 +273,7 @@ def greedy_best_first_search(mapToUse: np.ndarray, stats: dict):
             val = mapToUse[r, c]
             if val == 'E':
                 exit_pos = (r, c)
-            elif val in ['1', '2', '3']:
+            elif val.isdigit():
                 for _ in range(int(val)):
                     people.append((r, c))
                     
@@ -286,7 +284,7 @@ def greedy_best_first_search(mapToUse: np.ndarray, stats: dict):
     
     for pr, pc in people:
         val = new_map[pr, pc]
-        if val in ['1', '2', '3']:
+        if val.isdigit():
             new_val = str(int(val) - 1)
             new_map[pr, pc] = new_val if new_val != '0' else ' '
         else:
@@ -340,7 +338,7 @@ def greedy_best_first_search(mapToUse: np.ndarray, stats: dict):
                 target_val = new_map[next_step[0], next_step[1]]
                 
                 # Check capacity constraint dynamically
-                if target_val == 'E' or target_val == ' ' or (target_val in ['1', '2', '3'] and int(target_val) < MAX_PEOPLE_PER_CELL):
+                if target_val == 'E' or target_val == ' ' or (target_val.isdigit() and int(target_val) < MAX_PEOPLE_PER_CELL):
                     best_pos = next_step
 
         # Move the person
@@ -350,7 +348,7 @@ def greedy_best_first_search(mapToUse: np.ndarray, stats: dict):
             target_val = new_map[best_pos[0], best_pos[1]]
             if target_val == ' ':
                 new_map[best_pos[0], best_pos[1]] = '1'
-            elif target_val in ['1', '2', '3']:
+            elif target_val.isdigit():
                 new_map[best_pos[0], best_pos[1]] = str(int(target_val) + 1)
                 
     return new_map
@@ -366,7 +364,7 @@ def genetic_algorithm(mapToUse: np.ndarray, stats: dict):
             val = mapToUse[r, c]
             if val == 'E':
                 exit_pos = (r, c)
-            elif val in ['1', '2', '3']:
+            elif val.isdigit():
                 for _ in range(int(val)):
                     people.append((r, c))
                     
@@ -383,7 +381,7 @@ def genetic_algorithm(mapToUse: np.ndarray, stats: dict):
     
     for pr, pc in people:
         val = new_map[pr, pc]
-        if val in ['1', '2', '3']:
+        if val.isdigit():
             new_val = str(int(val) - 1)
             new_map[pr, pc] = new_val if new_val != '0' else ' '
         else:
@@ -474,7 +472,7 @@ def genetic_algorithm(mapToUse: np.ndarray, stats: dict):
         if 0 <= nr < rows and 0 <= nc < cols:
             target_val = new_map[nr, nc]
             if target_val not in ['#', '*']:
-                if target_val == 'E' or target_val == ' ' or (target_val in ['1', '2', '3'] and int(target_val) < MAX_PEOPLE_PER_CELL):
+                if target_val == 'E' or target_val == ' ' or (target_val.isdigit() and int(target_val) < MAX_PEOPLE_PER_CELL):
                     best_pos = (nr, nc)
                     
         # Move the person
@@ -484,7 +482,7 @@ def genetic_algorithm(mapToUse: np.ndarray, stats: dict):
             target_val = new_map[best_pos[0], best_pos[1]]
             if target_val == ' ':
                 new_map[best_pos[0], best_pos[1]] = '1'
-            elif target_val in ['1', '2', '3']:
+            elif target_val.isdigit():
                 new_map[best_pos[0], best_pos[1]] = str(int(target_val) + 1)
                 
     return new_map

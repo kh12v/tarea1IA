@@ -1,8 +1,34 @@
 import os
+import random
 import numpy as np
-from config import NUM_FIRE_TURNS
+from config import NUM_FIRE_TURNS, MAX_PEOPLE_PER_CELL, maps
 from algorithms import algoIteration
-from config import maps
+
+def placeAgents(mapToUse: np.ndarray, num_agents: int):
+    rows, cols = mapToUse.shape
+    agents_placed = 0
+    valid_cells = []
+    for r in range(rows):
+        for c in range(cols):
+            if mapToUse[r, c] == ' ':
+                valid_cells.append((r, c))
+                
+    if not valid_cells:
+        return mapToUse
+        
+    while agents_placed < num_agents:
+        r, c = random.choice(valid_cells)
+        val = mapToUse[r, c]
+        if val == ' ':
+            mapToUse[r, c] = '1'
+            agents_placed += 1
+        elif val.isdigit():
+            count = int(val)
+            if count < MAX_PEOPLE_PER_CELL:
+                mapToUse[r, c] = str(count + 1)
+                agents_placed += 1
+    return mapToUse
+
 
 def setMap():
     print("Seleccione el mapa:")
@@ -29,6 +55,17 @@ def setIterations():
         except ValueError:
             print("Error: El valor ingresado debe ser un numero")
     return iterations
+
+def setAgents():
+    people = -1
+    while people < 1 or people > 200:
+        try:
+            people = int(input("Ingrese la cantidad de personas (1-200): "))
+            if (people < 1 or people > 200):
+                print("Ingrese una opción válida")
+        except ValueError:
+            print("Error: El valor ingresado debe ser un numero")
+    return people
 
 def setAlgo():
     print("Seleccione el algoritmo:")
@@ -57,7 +94,7 @@ def spreadFire(mapToUse: np.ndarray, stats: dict):
                     ni, nj = i + dr, j + dc
                     if 0 <= ni < rows and 0 <= nj < cols:
                         if mapToUse[ni, nj] != '#' and mapToUse[ni, nj] != '*':
-                            if mapToUse[ni, nj] in ['1', '2', '3'] and mapWithFire[ni, nj] != '*':
+                            if mapToUse[ni, nj].isdigit() and mapWithFire[ni, nj] != '*':
                                 stats["died"] += int(mapToUse[ni, nj])
                             mapWithFire[ni, nj] = '*'
     return mapWithFire
@@ -65,9 +102,11 @@ def spreadFire(mapToUse: np.ndarray, stats: dict):
 def main():
     map_index, original_map = setMap()
     iterations = setIterations()
+    agents = setAgents()
     algo = setAlgo()
     print("Mapa seleccionado:\n", original_map)
     print("Iteraciones: ", iterations)
+    print("Agentes: ", agents)
     print("Algoritmo: ", algo)
 
     all_stats = []
@@ -75,14 +114,15 @@ def main():
     print("\nResultados:")
     for i in range(iterations):
         mapToUse = np.copy(original_map)
+        mapToUse = placeAgents(mapToUse, agents)
         stats = {"escaped": 0, "died": 0}
         turn = 0
         
-        print(f"\n--- Iniciando Simulación (Iteración {i + 1}) ---")
+        print(f"\n--- Iniciando Simulación (Iteración {i + 1} / {iterations}) ---")
         
         while True:
             # Verificar si quedan personas en el mapa
-            people_left = np.any(np.isin(mapToUse, ['1', '2', '3']))
+            people_left = any(val.isdigit() for val in mapToUse.flatten())
             if not people_left:
                 break
                 
@@ -102,8 +142,7 @@ def main():
     total_escaped = sum(s["escaped"] for s in all_stats)
     total_died = sum(s["died"] for s in all_stats)
     
-    # Cada iteración tiene exactamente 3 personas al inicio (config.py)
-    total_initial = 3 * iterations
+    total_initial = agents * iterations
     survival_rate = (total_escaped / total_initial) * 100
     
     # Distribución del tiempo de los turnos

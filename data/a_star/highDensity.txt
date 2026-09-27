@@ -1,11 +1,11 @@
 --- Estadísticas Finales (Relevancia Estadística) ---
-Total de iteraciones jugadas: 200
-Total personas que escaparon: 600 / 600
-Total personas que murieron: 0 / 600
-Tasa de supervivencia: 100.00%
+Total de iteraciones jugadas: 80
+Total personas que escaparon: 5991 / 6400
+Total personas que murieron: 409 / 6400
+Tasa de supervivencia: 93.61%
 
 --- Distribución del Tiempo de Despeje (Turnos) ---
-Media de turnos (Mean): 17.00
-Desviación estándar (Std Dev): 0.00
-Mínimo de turnos (Min): 17
-Máximo de turnos (Max): 17
+Media de turnos (Mean): 947.84
+Desviación estándar (Std Dev): 11.98
+Mínimo de turnos (Min): 887
+Máximo de turnos (Max): 957
