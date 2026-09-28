@@ -1,5 +1,5 @@
 # To run program first must activate python virtual environment
 1. cd .venv/Scripts/
 2. /activate.bat
-
-# Then run: python main.py
+3. Go back to root folder
+4. run: python main.py
